@@ -2,12 +2,10 @@
 
 from datetime import datetime
 from time import sleep
+import os.path
 import pexpect
 import threading
 import wx
-
-if 'spawn' not in dir(pexpect):
-    import wexpect as pexpect
 
 # Handles the current VPN connection
 class vpnConnection():
@@ -67,6 +65,9 @@ class vpnConnection():
 
 # Customised wx.Frame
 class customFrame(wx.Frame):
+    # Store path on self for images/assets
+    path = os.path.realpath(__file__)
+
     def __init__(self, *args, **kwargs):
         super(customFrame, self).__init__(*args, **kwargs)
         self.initUI()
@@ -84,10 +85,10 @@ class mainFrame(customFrame):
         thread.start()
         # Create toolbar
         toolbar = wx.ToolBar(self, style=wx.TB_VERTICAL)
-        tbConn = toolbar.AddTool(wx.ID_OPEN, '', wx.Bitmap('lib/connect.png'), shortHelp='Connect')
-        tbDisc = toolbar.AddTool(wx.ID_CLOSE, '', wx.Bitmap('lib/disconnect.png'), shortHelp='Disconnect')
-        tbClear = toolbar.AddTool(wx.ID_CLEAR, '', wx.Bitmap('lib/clear.png'), shortHelp='Clear Log')
-        tbExit = toolbar.AddTool(wx.ID_EXIT, '', wx.Bitmap('lib/exit.png'), shortHelp='Exit')
+        tbConn = toolbar.AddTool(wx.ID_OPEN, '', wx.Bitmap(self.path + '/lib/connect.png'), shortHelp='Connect')
+        tbDisc = toolbar.AddTool(wx.ID_CLOSE, '', wx.Bitmap(self.path + '/lib/disconnect.png'), shortHelp='Disconnect')
+        tbClear = toolbar.AddTool(wx.ID_CLEAR, '', wx.Bitmap(self.path + '/lib/clear.png'), shortHelp='Clear Log')
+        tbExit = toolbar.AddTool(wx.ID_EXIT, '', wx.Bitmap(self.path + '/lib/exit.png'), shortHelp='Exit')
         toolbar.Realize()
         self.log = wx.TextCtrl(self, style = wx.TE_MULTILINE | wx.TE_READONLY)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
