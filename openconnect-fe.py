@@ -66,7 +66,7 @@ class vpnConnection():
 # Customised wx.Frame
 class customFrame(wx.Frame):
     # Store path on self for images/assets
-    path = os.path.realpath(__file__)
+    path = os.path.dirname(os.path.realpath(__file__))
 
     def __init__(self, *args, **kwargs):
         super(customFrame, self).__init__(*args, **kwargs)
