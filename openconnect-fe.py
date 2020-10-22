@@ -4,6 +4,7 @@ from datetime import datetime
 from time import sleep
 import os.path
 import pexpect
+import sys
 import threading
 import wx
 
@@ -52,16 +53,56 @@ class vpnConnection():
             self.log = 'Cannot connect without all parameters'
             return False
         # Command to feed pexpect
-        self.command = ' '.join([
-                'echo "' + self.pw + '" | ',
-                'sudo openconnect',
-                '--protocol="' + self.prot + '"',
-                '--user="' + self.user + '"',
-                '--passwd-on-stdin',
-                self.host
-            ])
+        #self.command = ' '.join([
+        #        'echo "' + self.pw + '" | ',
+        #        'sudo openconnect',
+        #        '--protocol="' + self.prot + '"',
+        #        '--user="' + self.user + '"',
+        #        '--passwd-on-stdin',
+        #        self.host
+        #    ])
         # Initialise pexpect
-        #self.command = 'cmd.exe /C "for /L %i in (1,1,20) do @echo Log entry %i && @timeout /t 2 > nul"'
+        self.command = 'cmd.exe /C "for /L %i in (1,1,20) do @echo Log entry %i && @timeout /t 2 > nul"'
+
+# Custom logging event
+myCustomLogEvent = wx.NewEventType()
+customLogEvent = wx.PyEventBinder(myCustomLogEvent, 1)
+class logEvent(wx.PyCommandEvent):
+    '''Event to signal that log entries are ready'''
+    def __init__(self, etype, eid, value=None):
+        '''Creates the event object'''
+        wx.PyCommandEvent.__init__(self, etype, eid)
+        self._value = value
+    
+    def getValue(self):
+        '''Returns the value from the event'''
+        return self._value
+
+class vpnThread(threading.Thread):
+    def __init__(self, parent, params):
+        '''
+        @param parent: The gui object that should receive logs
+        @param params: Connection details for VPN
+        '''
+        threading.Thread.__init__(self)
+        self._parent = parent
+        self._params = params
+    
+    def run(self):
+        '''
+        Overrides Thread.run, doesn't need to be called directly
+        as its called internally when you call Thread.start()
+        '''
+        command = ' '.join([
+                        'echo "' + self.pw + '" | ',
+                        'sudo openconnect',
+                        '--protocol="' + self.prot + '"',
+                        '--user="' + self.user + '"',
+                        '--passwd-on-stdin',
+                        self.host])
+        self.child = pexpect.spawn(command, logfile=sys.stdout)
+        self.child.expect(pexpect.EOF)
+        self.child.close()
 
 # Customised wx.Frame
 class customFrame(wx.Frame):
@@ -91,6 +132,7 @@ class mainFrame(customFrame):
         tbExit = toolbar.AddTool(wx.ID_EXIT, '', wx.Bitmap(self.path + '/lib/exit.png'), shortHelp='Exit')
         toolbar.Realize()
         self.log = wx.TextCtrl(self, style = wx.TE_MULTILINE | wx.TE_READONLY)
+        wx.Log.SetActiveTarget(wx.LogTextCtrl(self.log))
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(toolbar, 0, wx.EXPAND)
         sizer.Add(self.log, 1, wx.EXPAND)
@@ -118,7 +160,24 @@ class mainFrame(customFrame):
         self.onUpdate()
     
     def bgThread(self):
+        # Loop forever until this class stops existing
         while self:
+            # Generate timestamp template
+            timestamp = datetime.now().strftime('%H:%M:%S')
+            # If new connection requested, spawn openconnect
+            if self.vpn.command:
+                self.vpn.process = pexpect.spawn(self.vpn.command, timeout=3600, ignore_sighup=False)
+                if len(self.vpn.log) > 1:
+                    self.vpn.log += '\n'
+                self.vpn.log += timestamp + ': Connecting to ' + self.vpn.prot.upper() + ' VPN ' + self.vpn.host + ' as ' + self.vpn.user
+                self.vpn.command = None
+                wx.CallAfter(self.onUpdate)
+            if self.vpn.process:
+                if self.vpn.process.isalive():
+                sleep(1)
+            # Always sleep 1 second after each loop
+            sleep(1)
+        while not self:
             timestamp = datetime.now().strftime('%H:%M:%S')
             if self.vpn.command:
                 self.vpn.process = pexpect.spawn(self.vpn.command, timeout=60, ignore_sighup=False)
