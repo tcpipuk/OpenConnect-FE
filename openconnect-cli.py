@@ -65,7 +65,7 @@ if 'help' not in args:
     if str(field) not in args or not args[field]:
       while args[field] == False:
         try:
-          if field is 'pw':
+          if field == 'pw':
             args[field] = getpass(prompt)
           else:
             args[field] = input(prompt)
