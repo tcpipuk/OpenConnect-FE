@@ -59,6 +59,9 @@ prompt_for = {
   'pw': 'Password for SSL VPN account: '
 }
 
+if protocol == 'anyconnect':
+  prompt_for['group'] == 'User group for SSL VPN account: '
+
 # Interate through fields and prompt for missing ones
 if 'help' not in args:
   for field,prompt in prompt_for.items():
@@ -72,21 +75,27 @@ if 'help' not in args:
         except:
           pass
 
-# Create OpenConnect command to launch
-command = ' '.join([
-    #'echo "' + args['pw'] + '" | ',
-    'sudo openconnect',
+# Collate arguments for command
+command = [
+  'sudo openconnect',
     '--no-cert-check',
     '--interface=vpn0',
     '--script=/usr/share/vpnc-scripts/vpnc-script',
     '--protocol="' + args['protocol'] + '"',
-    '--user="' + args['user'] + '"',
-    #'--passwd-on-stdin',
-    args['host']])
+    '--user="' + args['user'] + '"'
+]
 
-# Start process and clear remaining private data
+# Add usergroup for Cisco AnyConnect VPN
+if protocol == 'anyconnect':
+  command.append('--usergroup="' + args['group'] + '"')
+
+# Compile command
+command = ' '.join(command + [ args['host'] ])
+
+# Start process
 process = pexpect.spawnu('/bin/bash', ['-c', command])
 
+# Automate login process for Palo Alto GlobalProtect
 if args['protocol'] == 'gp':
   process.expect('Password: ')
   process.sendline(args['pw'])
@@ -95,11 +104,11 @@ if args['protocol'] == 'gp':
   process.expect('Password: ')
   process.sendline(args['pw'])
 
+# Clear remaining private data
 args = None
 command = None
 
-# Hand over input to user, wait until process ended then kill it
+# Hand over input to user, wait for process to end if interactive mode ends
 process.interact()
 while process.isalive():
   sleep(5)
-process.kill(1)
