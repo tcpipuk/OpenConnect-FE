@@ -18,7 +18,6 @@ parser_dst = parser.add_argument_group('VPN Server Details', 'Any missing fields
 parser_dst.add_argument('--host', type=str, default=False, help='DNS hostname of SSL VPN server')
 parser_dst.add_argument('--user', type=str, default=False, help='Username for SSL VPN account')
 parser_dst.add_argument('--pw', type=str, default=False, help='Password for SSL VPN account')
-parser_dst.add_argument('--group', type=str, default=False, help='User group for SSL VPN account (not always required)')
 
 # Import options, output help if none provided
 args = vars(parser.parse_args())
@@ -60,16 +59,16 @@ prompt_for = {
   'pw': 'Password for SSL VPN account: '
 }
 
-if args['protocol'] == 'anyconnect':
-  prompt_for['group'] = 'User group for SSL VPN account: '
-
 # Interate through fields and prompt for missing ones
 if 'help' not in args:
   for field,prompt in prompt_for.items():
     if str(field) not in args or not args[field]:
       while args[field] == False:
         try:
-          if field == 'pw':
+          if field == 'pw' and args['protocol'] != 'gp':
+            # Don't prompt for password on non-GP VPN yet
+            pass
+          elif field == 'pw':
             args[field] = getpass(prompt)
           else:
             args[field] = input(prompt)
@@ -82,15 +81,12 @@ command = [
     '--interface=vpn0',
     '--script=/usr/share/vpnc-scripts/vpnc-script',
     '--protocol="' + args['protocol'] + '"',
-    '--user="' + args['user'] + '"'
+    '--user="' + args['user'] + '"',
+    args['host']
 ]
 
-# Add usergroup for Cisco AnyConnect VPN
-if args['protocol'] == 'anyconnect':
-  command.append('--usergroup="' + args['group'] + '"')
-
 # Compile command
-command = ' '.join(command + [ args['host'] ])
+command = ' '.join(command)
 
 # Start process
 process = pexpect.spawnu('/bin/bash', ['-c', command])
