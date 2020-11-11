@@ -96,6 +96,8 @@ if args['protocol'] == 'gp':
   process.sendline(args['pw'])
   process.expect('GATEWAY: ')
   process.sendline('Primary GP')
+  process.expect('anything else to view:')
+  process.sendline('yes')
   process.expect('Password: ')
   process.sendline(args['pw'])
 
