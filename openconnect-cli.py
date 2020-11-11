@@ -79,7 +79,6 @@ if 'help' not in args:
 # Collate arguments for command
 command = [
   'sudo openconnect',
-    '--no-cert-check',
     '--interface=vpn0',
     '--script=/usr/share/vpnc-scripts/vpnc-script',
     '--protocol="' + args['protocol'] + '"',
