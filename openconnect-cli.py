@@ -66,8 +66,7 @@ if 'help' not in args:
       while args[field] == False:
         try:
           if field == 'pw' and args['protocol'] != 'gp':
-            # Don't prompt for password on non-GP VPN yet
-            pass
+            args[field] = 'N/A'
           elif field == 'pw':
             args[field] = getpass(prompt)
           else:
