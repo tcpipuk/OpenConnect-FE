@@ -60,7 +60,7 @@ prompt_for = {
 }
 
 if args['protocol'] == 'anyconnect':
-  prompt_for['group'] == 'User group for SSL VPN account: '
+  prompt_for['group'] = 'User group for SSL VPN account: '
 
 # Interate through fields and prompt for missing ones
 if 'help' not in args:
