@@ -76,6 +76,7 @@ if 'help' not in args:
 command = ' '.join([
     #'echo "' + args['pw'] + '" | ',
     'sudo openconnect',
+    '--no-cert-check',
     '--interface=vpn0',
     '--script=/usr/share/vpnc-scripts/vpnc-script',
     '--protocol="' + args['protocol'] + '"',
@@ -91,8 +92,6 @@ if args['protocol'] == 'gp':
   process.sendline(args['pw'])
   process.expect('GATEWAY: ')
   process.sendline('Primary GP')
-  process.expect('anything else to view:')
-  process.sendline('yes')
   process.expect('Password: ')
   process.sendline(args['pw'])
 
