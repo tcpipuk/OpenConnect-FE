@@ -55,8 +55,8 @@ else:
 # Fields to prompt for when False
 prompt_for = {
   'host': 'DNS hostname of SSL VPN server: ',
-  'user': 'Username for SSL VPN account: '
-  #'pw': 'Password for SSL VPN account: '
+  'user': 'Username for SSL VPN account: ',
+  'pw': 'Password for SSL VPN account: '
 }
 
 # Interate through fields and prompt for missing ones
@@ -76,6 +76,8 @@ if 'help' not in args:
 command = ' '.join([
     #'echo "' + args['pw'] + '" | ',
     'sudo openconnect',
+    '--interface=vpn0',
+    '--script=/usr/share/vpnc-scripts/vpnc-script',
     '--protocol="' + args['protocol'] + '"',
     '--user="' + args['user'] + '"',
     #'--passwd-on-stdin',
@@ -83,6 +85,16 @@ command = ' '.join([
 
 # Start process and clear remaining private data
 process = pexpect.spawnu('/bin/bash', ['-c', command])
+
+if args['protocol'] == 'gp':
+  process.expect('Password: ')
+  process.sendline(args['pw'])
+  process.expect('GATEWAY: ')
+  process.sendline('Primary GP')
+  process.expect('anything else to view:')
+  process.sendline('yes')
+  process.expect('Password: ')
+  process.sendline(args['pw'])
 
 args = None
 command = None
