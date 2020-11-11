@@ -59,7 +59,7 @@ prompt_for = {
   'pw': 'Password for SSL VPN account: '
 }
 
-if protocol == 'anyconnect':
+if args['protocol'] == 'anyconnect':
   prompt_for['group'] == 'User group for SSL VPN account: '
 
 # Interate through fields and prompt for missing ones
@@ -86,7 +86,7 @@ command = [
 ]
 
 # Add usergroup for Cisco AnyConnect VPN
-if protocol == 'anyconnect':
+if args['protocol'] == 'anyconnect':
   command.append('--usergroup="' + args['group'] + '"')
 
 # Compile command
