@@ -16,8 +16,9 @@ parser_type.add_argument('--paloalto', action='store_true', default=False, help=
 # VPN server details
 parser_dst = parser.add_argument_group('VPN Server Details', 'Any missing fields will be prompted on launch')
 parser_dst.add_argument('--host', type=str, default=False, help='DNS hostname of SSL VPN server')
-parser_dst.add_argument('--user', type=str, default=False, help='Username for admin account on Hitron router')
-parser_dst.add_argument('--pw', type=str, default=False, help='Password for admin account on Hitron router')
+parser_dst.add_argument('--user', type=str, default=False, help='Username for SSL VPN account')
+parser_dst.add_argument('--pw', type=str, default=False, help='Password for SSL VPN account')
+parser_dst.add_argument('--group', type=str, default=False, help='User group for SSL VPN account (not always required)')
 
 # Import options, output help if none provided
 args = vars(parser.parse_args())
