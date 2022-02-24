@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser(prog='openconnect-cli', description='Automate l
 # Type of VPN to initiate
 parser_type = parser.add_mutually_exclusive_group(required=False)
 parser_type.add_argument('--anyconnect', action='store_true', default=False, help='Cisco AnyConnect SSL VPN')
+parser_type.add_argument('--fortinet', action='store_true', default=False, help='Fortinet FortiClient SSL VPN')
 parser_type.add_argument('--pulsesecure', action='store_true', default=False, help='Juniper Network Connect / Pulse Secure SSL VPN')
 parser_type.add_argument('--paloalto', action='store_true', default=False, help='Palo Alto Networks (PAN) GlobalProtect SSL VPN')
 
@@ -27,14 +28,17 @@ def vpnTypePrompt():
   try:
     print('Please enter one of the following and press enter:')
     print('1 for Cisco AnyConnect')
-    print('2 for Pulse Secure or Juniper Network Connect')
-    print('3 for Palo Alto Networks GlobalProtect')
+    print('2 for Fortinet FortiClient')
+    print('3 for Pulse Secure or Juniper Network Connect')
+    print('4 for Palo Alto Networks GlobalProtect')
     protocol = int(input('SSL VPN Type: '))
     if protocol == 1:
       return 'anyconnect'
     elif protocol == 2:
-      return 'nc'
+      return 'fortinet'
     elif protocol == 3:
+      return 'nc'
+    elif protocol == 4:
       return 'gp'
     else:
       return False
@@ -43,6 +47,8 @@ def vpnTypePrompt():
 
 if 'anyconnect' in args and args['anyconnect']:
   args['protocol'] = 'anyconnect'
+elif 'fortinet' in args and args['fortinet']:
+  args['protocol'] = 'fortinet'
 elif 'pulsesecure' in args and args['pulsesecure']:
   args['protocol'] = 'nc'
 elif 'paloalto' in args and args['paloalto']:
