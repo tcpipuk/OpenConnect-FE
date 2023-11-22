@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-import argparse, pexpect
+import argparse
 from getpass import getpass
 from time import sleep
+import pexpect
 
 # Set up argument parser
 parser = argparse.ArgumentParser(prog='openconnect-cli', description='Automate logins to the OpenConnect SSL VPN client')
@@ -22,96 +23,72 @@ parser_dst.add_argument('--pw', type=str, default=False, help='Password for SSL 
 
 # Import options, output help if none provided
 args = vars(parser.parse_args())
-#args = vars(parser.parse_args(args=None if sys.argv[1:] else ['--help']))
 
 def vpnTypePrompt():
-  try:
-    print('Please enter one of the following and press enter:')
-    print('1 for Cisco AnyConnect')
-    print('2 for Fortinet FortiClient')
-    print('3 for Pulse Secure or Juniper Network Connect')
-    print('4 for Palo Alto Networks GlobalProtect')
-    protocol = int(input('SSL VPN Type: '))
-    if protocol == 1:
-      return 'anyconnect'
-    elif protocol == 2:
-      return 'fortinet'
-    elif protocol == 3:
-      return 'nc'
-    elif protocol == 4:
-      return 'gp'
-    else:
-      return False
-  except:
-    return False
+    try:
+        print('Please enter one of the following and press enter:')
+        print('1 for Cisco AnyConnect')
+        print('2 for Fortinet FortiClient')
+        print('3 for Pulse Secure or Juniper Network Connect')
+        print('4 for Palo Alto Networks GlobalProtect')
+        protocol = int(input('SSL VPN Type: '))
+        return {1: 'anyconnect', 2: 'fortinet', 3: 'nc', 4: 'gp'}.get(protocol)
+    except:
+        return False
 
-if 'anyconnect' in args and args['anyconnect']:
-  args['protocol'] = 'anyconnect'
-elif 'fortinet' in args and args['fortinet']:
-  args['protocol'] = 'fortinet'
-elif 'pulsesecure' in args and args['pulsesecure']:
-  args['protocol'] = 'nc'
-elif 'paloalto' in args and args['paloalto']:
-  args['protocol'] = 'gp'
-else:
-  args['protocol'] = False
-  while args['protocol'] == False:
+# Determine VPN protocol
+args['protocol'] = next((protocol for protocol, selected in args.items() if selected and protocol in ['anyconnect', 'fortinet', 'pulsesecure', 'paloalto']), False)
+if not args['protocol']:
     args['protocol'] = vpnTypePrompt()
+    while not args['protocol']:
+        args['protocol'] = vpnTypePrompt()
 
 # Fields to prompt for when False
 prompt_for = {
-  'host': 'DNS hostname of SSL VPN server: ',
-  'user': 'Username for SSL VPN account: ',
-  'pw': 'Password for SSL VPN account: '
+    'host': 'DNS hostname of SSL VPN server: ',
+    'user': 'Username for SSL VPN account: ',
+    'pw': 'Password for SSL VPN account: ' if args['protocol'] == 'gp' else None
 }
 
-# Interate through fields and prompt for missing ones
-if 'help' not in args:
-  for field,prompt in prompt_for.items():
-    if str(field) not in args or not args[field]:
-      while args[field] == False:
-        try:
-          if field == 'pw' and args['protocol'] != 'gp':
-            args[field] = 'N/A'
-          elif field == 'pw':
-            args[field] = getpass(prompt)
-          else:
-            args[field] = input(prompt)
-        except:
-          pass
+# Iterate through fields and prompt for missing ones
+for field, prompt in prompt_for.items():
+    if prompt and (field not in args or not args[field]):
+        args[field] = getpass(prompt) if field == 'pw' else input(prompt)
 
-# Collate arguments for command
-command = [
-  'sudo openconnect',
-    '--interface=vpn0',
-    '--script=/usr/share/vpnc-scripts/vpnc-script',
-    '--protocol="' + args['protocol'] + '"',
-    '--user="' + args['user'] + '"',
-    args['host']
-]
+# Build OpenConnect command
+openconnect_args = {
+    'interface': 'vpn0',
+    'script': '/usr/share/vpnc-scripts/vpnc-script',
+    'protocol': args['protocol'],
+    'user': args['user'],
+    'host': args['host']
+}
 
-# Compile command
-command = ' '.join(command)
+command_parts = ['sudo openconnect']
+command_parts += [f'--{key}="{value}"' for key, value in openconnect_args.items() if value]
+command = ' '.join(command_parts)
 
 # Start process
 process = pexpect.spawnu('/bin/bash', ['-c', command])
 
-# Automate login process for Palo Alto GlobalProtect
+# Handle Palo Alto login
 if args['protocol'] == 'gp':
-  process.expect('Password: ')
-  process.sendline(args['pw'])
-  process.expect('GATEWAY: ')
-  process.sendline('Primary GP')
-  process.expect('anything else to view:')
-  process.sendline('yes')
-  process.expect('Password: ')
-  process.sendline(args['pw'])
+    process.expect('Password: ')
+    process.sendline(args['pw'])
+    process.expect('GATEWAY: ')
+    process.sendline('Primary GP')
+    process.expect('anything else to view:')
+    process.sendline('yes')
+    process.expect('Password: ')
+    process.sendline(args['pw'])
 
-# Clear remaining private data
-args = None
+# Clear sensitive data
+for field in ['pw', 'user', 'host']:
+    args[field] = None
+openconnect_args = None
 command = None
 
-# Hand over input to user, wait for process to end if interactive mode ends
+# Hand over input to user and wait for process to end
 process.interact()
 while process.isalive():
-  sleep(5)
+    sleep(5)
