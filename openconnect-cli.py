@@ -38,10 +38,8 @@ def vpnTypePrompt():
 
 # Determine VPN protocol
 args['protocol'] = next((protocol for protocol, selected in args.items() if selected and protocol in ['anyconnect', 'fortinet', 'pulsesecure', 'paloalto']), False)
-if not args['protocol']:
+while not args['protocol']:
     args['protocol'] = vpnTypePrompt()
-    while not args['protocol']:
-        args['protocol'] = vpnTypePrompt()
 
 # Fields to prompt for when False
 prompt_for = {
@@ -63,6 +61,10 @@ openconnect_args = {
     'user': args['user'],
     'host': args['host']
 }
+
+# Specific argument for Cisco AnyConnect
+if args['protocol'] == 'anyconnect':
+    openconnect_args['useragent'] = 'AnyConnect Windows 4.10.07061'
 
 command_parts = ['sudo openconnect']
 command_parts += [f'--{key}="{value}"' for key, value in openconnect_args.items() if value]
