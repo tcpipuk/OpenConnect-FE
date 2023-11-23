@@ -53,13 +53,15 @@ for field, prompt in prompt_for.items():
     if prompt and (field not in args or not args[field]):
         args[field] = getpass(prompt) if field == 'pw' else input(prompt)
 
+# Store the host in a separate variable
+vpn_host = args.pop('host')
+
 # Build OpenConnect command
 openconnect_args = {
     'interface': 'vpn0',
     'script': '/usr/share/vpnc-scripts/vpnc-script',
     'protocol': args['protocol'],
-    'user': args['user'],
-    'host': args['host']
+    'user': args['user']
 }
 
 # Specific argument for Cisco AnyConnect
@@ -68,6 +70,7 @@ if args['protocol'] == 'anyconnect':
 
 command_parts = ['sudo openconnect']
 command_parts += [f'--{key}="{value}"' for key, value in openconnect_args.items() if value]
+command_parts.append(vpn_host)  # Append the VPN host at the end
 command = ' '.join(command_parts)
 
 # Start process
@@ -85,10 +88,11 @@ if args['protocol'] == 'gp':
     process.sendline(args['pw'])
 
 # Clear sensitive data
-for field in ['pw', 'user', 'host']:
+for field in ['pw', 'user']:
     args[field] = None
 openconnect_args = None
 command = None
+vpn_host = None
 
 # Hand over input to user and wait for process to end
 process.interact()
